@@ -339,26 +339,46 @@ class sfdcHandler {
 
         } else {
 
-          const customerData = await shopify.customer.create({
+          const newTags = [
+            'SF-CONTACT-' + contact_id,
+            'SF-ACCOUNT-' + contactData.AccountId,
+            'QUALIFIED',
+          ];
+
+          let phoneNumberParsed = '';
+          try {
+            let phoneNumber = phoneUtil.parseAndKeepRawInput(contactData.Phone, 'US');
+            phoneNumberParsed = phoneUtil.isValidNumber(phoneNumber) ? phoneNumber.getNationalNumber() : '';
+          } catch(e) {
+            phoneNumberParsed = '';
+          }
+
+          const customerParams = {
             first_name: contactData.FirstName,
             last_name: contactData.LastName,
             email: contactData.Email,
-            phone: contactData.Phone,
+            // phone: phoneNumberParsed,
             addresses: [
               {
-                address1: contactData.MailingStreet,
-                city: contactData.MailingCity,
+                address1: contactData.MailingStreet || '',
+                city: contactData.MailingCity || '',
                 province: helper.getStateCode(contactData.MailingState),
-                phone: contactData.Phone,
-                zip: contactData.MailingPostalCode,
+                phone: phoneNumberParsed,
+                zip: contactData.MailingPostalCode || '',
                 last_name: contactData.LastName,
                 first_name: contactData.FirstName,
                 country: 'US',
               }
             ],
-            send_email_invite: true,
-            tags: 'QUALIFIED, SF-' + contact_id, //+ ', PLAN-' + (contactData.Current_method_of_payment__c == "Yes, I'm prepared to pay cash now." ? 'CASH' : 'RTO'),
-          });
+            verified_email: true,
+            password: SHOPIFY_CUSTOMER_CREDS,
+            password_confirmation: SHOPIFY_CUSTOMER_CREDS,
+            send_email_welcome: false,
+            tags: newTags.join(','),
+          };
+          // console.log(customerParams);
+
+          const customerData = await shopify.customer.create(customerParams);
           // console.log('new customer --- ', customerData);
 
           customer_id = customerData.id;
