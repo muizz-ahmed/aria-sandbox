@@ -575,13 +575,14 @@ class sfdcHandler {
 
         const customerTags = order.customer.tags.split(',');
 
-        let leadIdTag = customerTags.find(tag => tag.includes('SF-LEAD-'));
-        if (!leadIdTag) throw 'Cannot find relevant SF Lead';
-        let lead_id = leadIdTag.split('SF-LEAD-')[1];
-
         let contactIdTag = customerTags.find(tag => tag.includes('SF-CONTACT-'));
         let accountIdTag = customerTags.find(tag => tag.includes('SF-ACCOUNT-'));
         if (!contactIdTag || !accountIdTag) {
+
+          let leadIdTag = customerTags.find(tag => tag.includes('SF-LEAD-'));
+          if (!leadIdTag) throw 'Cannot find relevant SF Lead';
+          let lead_id = leadIdTag.split('SF-LEAD-')[1];
+
           try {
             const leadConversionResult = await this.do_request('/services/data/v20.0/sobjects/Lead/' + lead_id, {
               is_post: true,
