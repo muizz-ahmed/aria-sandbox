@@ -668,21 +668,21 @@ class sfdcHandler {
         }
 
         if (order.billing_address) {
-          order_data['order'][0]['BillingStreet'] = order.billing_address.address1 + (order.billing_address.address2 ? ', ' + order.billing_address.address1 : '');
+          order_data['order'][0]['BillingStreet'] = order.billing_address.address1 + (order.billing_address.address2 ? ', ' + order.billing_address.address2 : '');
           order_data['order'][0]['BillingCity'] = order.billing_address.city;
           order_data['order'][0]['BillingState'] = order.billing_address.province;
           order_data['order'][0]['BillingPostalCode'] = order.billing_address.zip;
           order_data['order'][0]['BillingCountry'] = order.billing_address.country;
         }
         if (order.shipping_address) {
-          order_data['order'][0]['ShippingStreet'] = order.shipping_address.address1 + (order.shipping_address.address2 ? ', ' + order.shipping_address.address1 : '');
+          order_data['order'][0]['ShippingStreet'] = order.shipping_address.address1 + (order.shipping_address.address2 ? ', ' + order.shipping_address.address2 : '');
           order_data['order'][0]['ShippingCity'] = order.shipping_address.city;
           order_data['order'][0]['ShippingState'] = order.shipping_address.province;
           order_data['order'][0]['ShippingPostalCode'] = order.shipping_address.zip;
           order_data['order'][0]['ShippingCountry'] = order.shipping_address.country;
 
           const contactUpdateData = {
-            'MailingStreet': order.shipping_address.address1 + (order.shipping_address.address2 ? ', ' + order.shipping_address.address1 : ''),
+            'MailingStreet': order.shipping_address.address1 + (order.shipping_address.address2 ? ', ' + order.shipping_address.address2 : ''),
             'MailingCity': order.shipping_address.city,
             'MailingState': order.shipping_address.province,
             'MailingPostalCode': order.shipping_address.zip,
