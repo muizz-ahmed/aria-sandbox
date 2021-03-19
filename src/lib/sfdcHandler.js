@@ -370,10 +370,10 @@ class sfdcHandler {
                 country: 'US',
               }
             ],
-            verified_email: true,
+            // verified_email: true,
             // password: SHOPIFY_CUSTOMER_CREDS,
             // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
-            send_email_welcome: true,
+            send_email_invite: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
@@ -495,10 +495,10 @@ class sfdcHandler {
                 country: 'US',
               }
             ],
-            verified_email: true,
+            // verified_email: true,
             // password: SHOPIFY_CUSTOMER_CREDS,
             // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
-            send_email_welcome: true,
+            send_email_invite: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
