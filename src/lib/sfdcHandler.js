@@ -371,9 +371,9 @@ class sfdcHandler {
               }
             ],
             verified_email: true,
-            password: SHOPIFY_CUSTOMER_CREDS,
-            password_confirmation: SHOPIFY_CUSTOMER_CREDS,
-            send_email_welcome: false,
+            // password: SHOPIFY_CUSTOMER_CREDS,
+            // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
+            send_email_welcome: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
@@ -496,9 +496,9 @@ class sfdcHandler {
               }
             ],
             verified_email: true,
-            password: SHOPIFY_CUSTOMER_CREDS,
-            password_confirmation: SHOPIFY_CUSTOMER_CREDS,
-            send_email_welcome: false,
+            // password: SHOPIFY_CUSTOMER_CREDS,
+            // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
+            send_email_welcome: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
@@ -588,7 +588,7 @@ class sfdcHandler {
               is_post: true,
               is_patch: true,
               data: {
-                // 'Trigger_Conversion__c': true,
+                'Trigger_Conversion__c': true,
                 'Status': 'Purchase Lead',
                 'Sub_Category__c': 'Committed',
               },
