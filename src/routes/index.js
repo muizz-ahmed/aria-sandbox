@@ -60,6 +60,7 @@ router.get('/test', async (req, res) => {
 
 router.use('/salesforce', require('./salesforce'));
 router.use('/shopify', require('./shopify'));
+router.use('/brightree', require('./brightree'));
 
 router.use('/validate', require('./validate'));
 router.use('/webhook', require('./webhook'));
