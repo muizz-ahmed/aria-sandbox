@@ -1,6 +1,7 @@
 const sfdcDB = require('../../lib/resources').db.sfdc;
 const {
   sfdcHandler,
+  logHandler,
 } = require('../../lib/handler');
 
 exports.describe = async (req, res) => {
@@ -61,22 +62,29 @@ exports.createShopifyCustomerFromLead = async (req, res) => {
 };
 
 exports.fulfillShopifyOrderFromSalesforce = async (req, res) => {
+  const {
+    order_id = '',
+  } = req.body;
+  const responseData = {
+    success: true,
+  };
   try {
-    const {
-      order_id = '',
-    } = req.body;
     if (!order_id) throw 'Order ID is missing';
-    await sfdcHandler.fulfillShopifyOrderFromSalesforce(order_id);
-    res.send({
-      success: true,
-    });
+    responseData.data = await sfdcHandler.fulfillShopifyOrderFromSalesforce(order_id);
   } catch(error) {
     console.log('--- Error from fulfillShopifyOrderFromSalesforce controller', error);
-    res.send({
-      success: false,
-      error,
-    });
+    responseData.success = false;
+    responseData.data = error;
   }
+  await logHandler.write({
+    source: 'salesforce.fulfillShopifyOrderFromSalesforce',
+    payload: req.body,
+    content: responseData,
+  });
+  if (!responseData.success) {
+    return res.status(500).send();
+  }
+  res.status(204).send();
 };
 
 exports.sf_shopify_price_sync = async (req, res) => {
