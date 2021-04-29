@@ -7,6 +7,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/createPatientFromSalesforce', brightree_controller.createPatientFromSalesforce);
-router.post('/createOrderFromSalesforce', brightree_controller.createOrderFromSalesforce);
+router.post('/createReferralFromSalesforce', brightree_controller.createReferralFromSalesforce);
+router.post('/updateReferralWithRx', brightree_controller.updateReferralWithRx);
 
 module.exports = router;

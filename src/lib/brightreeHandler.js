@@ -16,6 +16,8 @@ const {
   sfdcHandler,
 } = require('./handler');
 
+const moment = require('moment');
+
 class BrightreeClient {
   constructor(args = {}) {
     this.params = {
@@ -186,14 +188,30 @@ class brightreeHandler {
     });
   }
 
-  createOrderFromSalesforce(payload) {
+  createReferralFromSalesforce(payload) {
     return new Promise(async (resolve, reject) => {
       try {
 
         const { order_id } = payload;
-        const order_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Order/Shopify_Order_ID__c/' + order_id);
-        const contact_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Contact/' + order_response.Contact__c);
+        const [
+          order_response,
+          orderItems_response,
+          prescriptions_response,
+        ] = await Promise.all([
+          sfdcHandler.do_request('/services/data/v20.0/sobjects/Order/' + order_id),
+          sfdcHandler.do_request('/services/data/v44.0/sobjects/Order/' + order_id + '/OrderItems'),
+          sfdcHandler.do_request('/services/data/v44.0/sobjects/Order/' + order_id + '/Prescription_Collections__r'),
+        ]);
 
+        if (prescriptions_response.totalSize == 0) {
+          return resolve('no prescriptions');
+        }
+        const prescriptions = prescriptions_response.records.filter(record => !record.Duplicate__c);
+        if (prescriptions.length == 0) {
+          return resolve('no prescriptions for this order/contact');
+        }
+
+        const contact_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Contact/' + order_response.Contact__c);
 
         const referral_response = await this.do_request('/api/site/MontereyHealthAPI/referral', {
           method: 'POST',
@@ -207,7 +225,7 @@ class brightreeHandler {
               "externalID": "1001"
             },
             "patient": {
-              // "externalId": "API-0706-001",
+              "externalId": contact_response.Id,
               // "clinicalInfo": {
               //   "Diagnoses": [
               //     {
@@ -233,7 +251,7 @@ class brightreeHandler {
                 "billingAddress": {
                   "addressLine1": contact_response.MailingStreet,
                   "city": contact_response.MailingCity,
-                  // "country": contact_response.MailingCountry,
+                  "country": contact_response.MailingCountry,
                   "state": helper.getStateCode(contact_response.MailingState),
                   "zipCode": contact_response.MailingPostalCode
                 },
@@ -241,18 +259,19 @@ class brightreeHandler {
                   "addressLine1": contact_response.OtherStreet,
                   "addressLine2": "",
                   "city": contact_response.OtherCity,
-                  // "country": contact_response.OtherCountry,
+                  "country": contact_response.OtherCountry,
                   "state": helper.getStateCode(contact_response.OtherState),
                   "zipCode": contact_response.OtherPostalCode
                 },
-                // "dob": "19411207",
+                "dob": moment(new Date(prescriptions[0].Patient_Date_of_Birth__c)).format('YYYYMMDD'),
                 // "dod": "",
                 "emailAddress": contact_response.Email,
                 // "gender": "Male",
-                // "homePhone": contact_response.Phone,
+                "homePhone": contact_response.Phone,
                 // "maritalStatus": "Single",
-                // "mobilePhone": contact_response.MobilePhone,
+                "mobilePhone": contact_response.MobilePhone,
                 "name": {
+                  "title": contact_response.Title,
                   "first": contact_response.FirstName,
                   "last": contact_response.LastName,
                 },
@@ -315,30 +334,26 @@ class brightreeHandler {
               // },
               // "patientId": null
             },
-            // "salesOrder": {
-            //   "externalId": "API-0706-101",
+            "salesOrder": {
+              "externalId": order_response.Id,
             //   "note": "this is the contents of a sales order note",
-            //   "submittedBy": {
-            //     "first": "first",
-            //     "last": "last",
-            //     "middle": "middle",
-            //     "suffix": "suffix",
-            //     "title": "title"
-            //   },
+              "submittedBy": {
+                "title": contact_response.Title,
+                "first": contact_response.FirstName,
+                "last": contact_response.LastName,
+              },
             //   "actualDeliveryDate": "20200710",
             //   "actualDeliveryTime": "16:00",
             //   "requestedDeliveryDate": "20200710",
             //   "requestedDeliveryTime": "15:30",
-            //   "items": [
-            //     {
-            //       "externalId": "API-0701-101-01",
-            //       "itemName": "AirSense 10 Tri-pack",
-            //       "itemDescription": "AIRSENSE 10 AUTOSET USA TRI",
-            //       "itemId": "CPAP-Kit",
-            //       "note": "Call patient to schedule delivery ",
-            //       "quantity": 1
-            //     }
-            //   ],
+              "items": orderItems_response.records.map(lineItem => ({
+                "externalId": lineItem.Id,
+                "itemName": lineItem.Item_Name__c,
+                "itemDescription": "",
+                "itemId": lineItem.SKU__c,
+                "note": "",
+                "quantity": lineItem.Quantity,
+              })),
             //   "orderingDoctor": {
             //     "orderingDoctor": {
             //       "npi": "1234567890",
@@ -351,7 +366,7 @@ class brightreeHandler {
             //       }
             //     }
             //   }
-            // }
+            }
           }
         });
 
@@ -367,17 +382,29 @@ class brightreeHandler {
         //     "ReferralKey": 794485
         // }
 
-        let referral_details = null;
+        // let referral_details = null;
         // if (referral_response && referral_response.ReferralKey) {
         //   referral_details = await this.do_request(`/api/site/MontereyHealthAPI/referral/${referral_response.ReferralKey}/getreferralstatus`);
         // }
 
-        resolve({
+        await sfdcHandler.do_request('/services/data/v20.0/sobjects/Order/' + order_response.Id, {
+          is_post: true,
+          is_patch: true,
+          data: {
+            'BT_ReferralKey__c': referral_response.ReferralKey,
+          },
+        });
+        // console.log(response);
+
+        const response = {
           referral_response,
-          referral_details,
+          // referral_details,
           order_response,
           contact_response,
-        });
+          orderItems_response,
+        };
+
+        resolve(response);
 
         // const patientData = {
         //   ExternalID: contact_response.Id,
@@ -440,6 +467,66 @@ class brightreeHandler {
     });
   }
 
+  updateReferralWithRx(payload) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { order_id } = payload;
+        const [
+          order_response,
+          prescriptions_response,
+        ] = await Promise.all([
+          sfdcHandler.do_request('/services/data/v20.0/sobjects/Order/' + order_id),
+          sfdcHandler.do_request('/services/data/v44.0/sobjects/Order/' + order_id + '/Prescription_Collections__r'),
+        ]);
+        // const contact_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Contact/' + order_response.Contact__c);
+
+        if (prescriptions_response.totalSize == 0) {
+          return resolve('no prescriptions');
+        }
+        const prescriptions = prescriptions_response.records.filter(record => !record.Duplicate__c);
+        if (prescriptions.length == 0) {
+          return resolve('no prescriptions for this order/contact');
+        }
+
+        const attachments_response = await sfdcHandler.getObjectRecords('Attachment', ['Id', 'Name', 'Body'], `WHERE ParentId='${prescriptions[0].Id}'`);
+
+        const documents_response = await Promise.all(
+          attachments_response.map(attachment => new Promise(async (resolve, reject) => {
+            try {
+              const content = await sfdcHandler.do_request(attachment.Body, {
+                is_html: true,
+              });
+              await this.do_request('/api/site/MontereyHealthAPI/referral/' + order_response.BT_ReferralKey__c + '/document', {
+                method: 'POST',
+                body: {
+                  "Id": attachment.Id,
+                  "Content": Buffer.from(content, 'binary').toString('base64'),
+                },
+              });
+              resolve({
+                ...attachment,
+                content,
+              })
+            } catch(e) {
+              reject(e)
+            }
+          }))
+        );
+
+        const response = {
+          order_response,
+          // contact_response,
+          prescriptions_response,
+          // referral_response,
+          attachments_response,
+          documents_response,
+        }
+        resolve(response);
+      } catch(e) {
+        reject(e);
+      }
+    });
+  }
 };
 
 module.exports = new brightreeHandler();
