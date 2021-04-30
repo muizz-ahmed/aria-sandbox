@@ -1,13 +1,20 @@
 var express = require('express');
+var jwt = require('jsonwebtoken');
 var router = express.Router();
 
 const {
+  brightreeHandler,
   sfdcHandler,
   avalaraHandler,
   reportsHandler,
-  shopifyHandler,
+  logHandler,
   cronHandler,
 } = require('../lib/handler');
+
+const {
+  AUTH_SECRET,
+  AUTH_TOKEN_LIFE,
+} = require('../lib/config');
 
 const {
   validateToken,
@@ -56,6 +63,29 @@ router.get('/test', async (req, res) => {
     responseData.error = e;
   }
   res.send(responseData);
+});
+
+router.post('/auth/token', async (req, res) => {
+  res.send({
+    access_token: jwt.sign({ source: 'brightree' }, AUTH_SECRET, { expiresIn: +AUTH_TOKEN_LIFE }),
+    token_type: 'bearer',
+    expires_in: AUTH_TOKEN_LIFE,
+  });
+});
+
+router.post('/api/site/:sitenickname/referral/:referralid/updatestatus', async (req, res) => {
+  const responseData = {
+    success: true,
+  };
+  await logHandler.write({
+    source: 'brightree.referral.updatestatus',
+    payload: {
+      params: req.params,
+      body: req.body,
+    },
+    content: responseData,
+  });
+  res.status(204).send();
 });
 
 router.use('/salesforce', require('./salesforce'));

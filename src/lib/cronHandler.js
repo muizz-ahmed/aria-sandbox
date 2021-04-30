@@ -3,7 +3,6 @@ const createError = require('http-errors');
 const {
   dbHandler,
   sfdcHandler,
-  shopifyHandler,
 } = require('./handler');
 const { NODE_ENV } = require('./config');
 const {
