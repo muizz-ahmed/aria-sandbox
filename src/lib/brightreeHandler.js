@@ -527,6 +527,41 @@ class brightreeHandler {
       }
     });
   }
+
+  handleReferralStatusUpdated(params, payload) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const referralKey = params.referralid;
+
+        const responses = [];
+        if (payload.ReferralStatus == 'Delivered' || payload.ReferralStatus == 'Scheduled') {
+          if (payload.ReferralSalesOrder) {
+            if (payload.ReferralSalesOrder.Tracking.length > 0) {
+              const trackingList = payload.ReferralSalesOrder.Tracking.filter(tracking => tracking.TrackingNumber != '');
+              if (trackingList.length > 0) {
+                const trackingData = trackingList[0];
+
+                responses.push(
+                  sfdcHandler.do_request('/services/data/v20.0/sobjects/Order/BT_ReferralKey__c/' + referralKey, {
+                    is_patch: true,
+                    is_post: true,
+                    data: {
+                      Tracking__c: trackingData.TrackingNumber,
+                      Status: 'Out for Delivery',
+                    },
+                  })
+                );
+              }
+            }
+          }
+        }
+        const responseData = await Promise.all(responses);
+        resolve(responseData);
+      } catch(e) {
+        reject(e);
+      }
+    });
+  }
 };
 
 module.exports = new brightreeHandler();

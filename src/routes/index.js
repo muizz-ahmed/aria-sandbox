@@ -77,11 +77,18 @@ router.post('/api/site/:sitenickname/referral/:referralid/updatestatus', async (
   const responseData = {
     success: true,
   };
+  try {
+    responseData.data = await brightreeHandler.handleReferralStatusUpdated(req.params, req.body);
+  } catch(e) {
+    console.log(e);
+    responseData.success = false;
+    responseData.error = e;
+  }
   await logHandler.write({
     source: 'brightree.referral.updatestatus',
     payload: {
       params: req.params,
-      body: req.body,
+      payload: req.body,
     },
     content: responseData,
   });
