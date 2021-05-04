@@ -212,6 +212,7 @@ class brightreeHandler {
         }
 
         const contact_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Contact/' + order_response.Contact__c);
+        const attachments_response = await sfdcHandler.getObjectRecords('Attachment', ['Id', 'Name', 'Body'], `WHERE ParentId='${prescriptions[0].Id}'`);
 
         const referral_response = await this.do_request('/api/site/MontereyHealthAPI/referral', {
           method: 'POST',
@@ -334,6 +335,21 @@ class brightreeHandler {
               // },
               // "patientId": null
             },
+            documents: await Promise.all(
+              attachments_response.map(attachment => new Promise(async (resolve, reject) => {
+                try {
+                  const content = await sfdcHandler.do_request(attachment.Body, {
+                    is_html: true,
+                  });
+                  return resolve({
+                    "Id": attachment.Id,
+                    "Content": Buffer.from(content, 'binary').toString('base64'),
+                  });
+                } catch(e) {
+                  return resolve({});
+                }
+              }))
+            ),
             "salesOrder": {
               "externalId": order_response.Id,
             //   "note": "this is the contents of a sales order note",
