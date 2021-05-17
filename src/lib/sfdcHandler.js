@@ -374,6 +374,7 @@ class sfdcHandler {
             // password: SHOPIFY_CUSTOMER_CREDS,
             // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
             send_email_invite: true,
+            accepts_marketing: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
@@ -499,6 +500,7 @@ class sfdcHandler {
             // password: SHOPIFY_CUSTOMER_CREDS,
             // password_confirmation: SHOPIFY_CUSTOMER_CREDS,
             send_email_invite: true,
+            accepts_marketing: true,
             tags: newTags.join(','),
           };
           // console.log(customerParams);
