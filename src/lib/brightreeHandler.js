@@ -212,7 +212,13 @@ class brightreeHandler {
         }
 
         const contact_response = await sfdcHandler.do_request('/services/data/v20.0/sobjects/Contact/' + order_response.Contact__c);
-        const attachments_response = await sfdcHandler.getObjectRecords('Attachment', ['Id', 'Name', 'Body'], `WHERE ParentId='${prescriptions[0].Id}'`);
+        const [
+          attachments_response,
+          insurances_response,
+        ] = await Promise.all([
+          sfdcHandler.getObjectRecords('Attachment', ['Id', 'Name', 'Body'], `WHERE ParentId='${prescriptions[0].Id}'`),
+          sfdcHandler.getObjectRecords('Insurance__c', ['Id', 'Insurance_Record__c', 'Name', 'Group_Number__c'], `WHERE Contact__c='${order_response.Contact__c}'`),
+        ]);
 
         const referral_response = await this.do_request('/api/site/MontereyHealthAPI/referral', {
           method: 'POST',
@@ -333,6 +339,14 @@ class brightreeHandler {
               //     }
               //   ]
               // },
+              "insuranceInfo": {
+                "patientPayors": insurances_response.map(insurance => ({
+                  "insuranceId": insurance.Insurance_Record__c,
+                  "externalPayorId": insurance.Id,
+                  "groupNumber": insurance.Group_Number__c,
+                  "groupName": insurance.Name,
+                })),
+              },
               // "patientId": null
             },
             documents: await Promise.all(
