@@ -20,6 +20,8 @@ const {
   validateToken,
 } = require('../middleware');
 
+const helper = require('../lib/helper');
+
 var unless = function(path, middleware) {
   return function(req, res, next) {
     if (Array.isArray(path) && path.some(p => req.path.startsWith(p)) || req.path.startsWith(path)) {
