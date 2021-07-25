@@ -95,6 +95,31 @@ router.post('/api/site/:sitenickname/referral/:referralid/updatestatus', async (
   res.status(204).send();
 });
 
+router.get('/load', async (req, res) => {
+  let responseData = {
+    success: true,
+  };
+  try {
+    responseData.data = await (() => new Promise(async (resolve, reject) => {
+      try {
+        const response = await helper.do_request({
+          url: req.query.url,
+          is_raw: true,
+        });
+        resolve(response);
+      } catch(e) {
+        console.log(e)
+        reject(e)
+      }
+    }))()
+  } catch(e) {
+    console.log(e);
+    responseData.success = false;
+    responseData.error = e;
+  }
+  res.send(responseData);
+});
+
 router.use('/salesforce', require('./salesforce'));
 router.use('/shopify', require('./shopify'));
 router.use('/brightree', require('./brightree'));
